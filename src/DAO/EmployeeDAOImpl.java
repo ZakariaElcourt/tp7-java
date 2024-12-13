@@ -8,7 +8,7 @@ import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
-public class EmployeeDAOImpl implements EmployeeDAOI {
+public class EmployeeDAOImpl implements GenericDAO<Employee> {
 
     @Override
     public void add(Employee employee) {
@@ -113,7 +113,7 @@ public List<Employee> listAll() {
     @Override
     public void update(Employee employee, int id) {
         String sql = "UPDATE Employe SET nom = ?, prenom = ?, email = ?, phone = ?, salaire = ?, role = ?, poste = ? WHERE id = ?";
-        
+            
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setString(1, employee.getNom());
             stmt.setString(2, employee.getPrenom());

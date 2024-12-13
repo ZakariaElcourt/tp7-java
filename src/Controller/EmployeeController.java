@@ -1,27 +1,28 @@
 package Controller;
 
-import DAO.EmployeeDAOI;
+import DAO.GenericDAO;
 import DAO.EmployeeDAOImpl;
 import Model.Employee;
 import Model.Poste;
 import Model.Role;
 import View.EmployeeView;
+import View.HolidayView;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
-
 import java.util.List;
-
 
 public class EmployeeController {
     private final EmployeeView view;
-    private final EmployeeDAOI dao;
+    private final GenericDAO<Employee> dao;
+    private final HolidayView holidayView;
 
-    public EmployeeController(EmployeeView view) {
+    public EmployeeController(EmployeeView view, HolidayView holidayView) {
         this.view = view;
         this.dao = new EmployeeDAOImpl();
+        this.holidayView = holidayView;
 
         // Écouteur pour le bouton Ajouter
         view.addButton.addActionListener(new ActionListener() {
@@ -38,6 +39,15 @@ public class EmployeeController {
                 listEmployees();
             }
         });
+        // ActionListener for the "Gérer les Congés" button
+         view.switchViewButton.addActionListener(new ActionListener() {
+         @Override
+          public void actionPerformed(ActionEvent e) {
+              view.setVisible(false);  // Hide Employee view
+                holidayView.setVisible(true);  // Show Holiday view
+    }
+});
+
 
         // Écouteur pour le bouton Supprimer
         view.deleteButton.addActionListener(new ActionListener() {
@@ -54,9 +64,18 @@ public class EmployeeController {
                 modifyEmployee();
             }
         });
+
+        // ActionListener pour le bouton "Gérer les Congés"
+        view.switchViewButton.addActionListener(new ActionListener() {
+            @Override
+            public void actionPerformed(ActionEvent e) {
+                view.setVisible(false); // Hide the Employee View
+                holidayView.setVisible(true); // Show the Holiday View
+            }
+        });
     }
 
-    // Méthode pour ajouter un employé
+    // Méthodes pour gérer les employés (inchangées)
     private void addEmployee() {
         try {
             String nom = view.nameField.getText();
@@ -75,7 +94,6 @@ public class EmployeeController {
         }
     }
 
-    // Méthode pour afficher la liste des employés
     private void listEmployees() {
         List<Employee> employees = dao.listAll();
         String[] columnNames = {"ID", "Nom", "Prénom", "Email", "Téléphone", "Salaire", "Rôle", "Poste"};
@@ -89,7 +107,6 @@ public class EmployeeController {
         view.employeeTable.setModel(model);
     }
 
-    // Méthode pour supprimer un employé
     private void deleteEmployee() {
         try {
             int id = Integer.parseInt(JOptionPane.showInputDialog(view, "Entrez l'ID de l'employé à supprimer :"));
@@ -100,21 +117,15 @@ public class EmployeeController {
         }
     }
 
-    // Méthode pour modifier un employé
-    // Méthode pour modifier un employé
     private void modifyEmployee() {
         try {
-            // Vérifier si une ligne est sélectionnée dans le tableau
             int selectedRow = view.employeeTable.getSelectedRow();
             if (selectedRow == -1) {
                 JOptionPane.showMessageDialog(view, "Veuillez sélectionner un employé dans le tableau.");
                 return;
             }
-    
-            // Récupérer l'ID de l'employé sélectionné
+
             int id = (int) view.employeeTable.getValueAt(selectedRow, 0);
-    
-            // Charger les nouvelles informations depuis les champs
             String nom = view.nameField.getText();
             String prenom = view.surnameField.getText();
             String email = view.emailField.getText();
@@ -122,18 +133,14 @@ public class EmployeeController {
             double salaire = Double.parseDouble(view.salaryField.getText());
             Role role = Role.valueOf(view.roleCombo.getSelectedItem().toString().toUpperCase());
             Poste poste = Poste.valueOf(view.posteCombo.getSelectedItem().toString().toUpperCase());
-    
-            // Créer un nouvel objet Employee avec les informations mises à jour
+
             Employee updatedEmployee = new Employee(nom, prenom, email, phone, salaire, role, poste);
-    
-            // Mettre à jour dans la base de données
             dao.update(updatedEmployee, id);
-    
-            // Rafraîchir la table
+
             JOptionPane.showMessageDialog(view, "Employé mis à jour avec succès.");
             listEmployees();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
         }
-    }  
+    }
 }

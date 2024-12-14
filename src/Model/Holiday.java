@@ -1,25 +1,23 @@
 package Model;
 
 public class Holiday {
+    private int id; // Identifiant du congé
+    private int employeeId; // ID de l'employé
+    private String employeeName; // Nom complet de l'employé
+    private String startDate; // Date de début
+    private String endDate;   // Date de fin
+    private Type type;        // Type de congé (enum)
 
-    private int id;
-    private int employeeId; // Reference to the employee
-    private String startDate;
-    private String endDate;
-    private Type type; // Enum type for holiday type
-
-    // Enum for holiday types
-
-    // Constructor with id
-    public Holiday(int id, int employeeId, String startDate, String endDate, Type type) {
+    // Constructeur avec employeeName pour listAll()
+    public Holiday(int id, String employeeName, String startDate, String endDate, Type type) {
         this.id = id;
-        this.employeeId = employeeId;
+        this.employeeName = employeeName;
         this.startDate = startDate;
         this.endDate = endDate;
         this.type = type;
     }
 
-    // Constructor without id
+    // Constructeur pour add() et update() (sans employeeName)
     public Holiday(int employeeId, String startDate, String endDate, Type type) {
         this.employeeId = employeeId;
         this.startDate = startDate;
@@ -27,55 +25,32 @@ public class Holiday {
         this.type = type;
     }
 
-    // Getters and Setters
+    // Getters et Setters
     public int getId() {
         return id;
-    }
-
-    public void setId(int id) {
-        this.id = id;
     }
 
     public int getEmployeeId() {
         return employeeId;
     }
 
-    public void setEmployeeId(int employeeId) {
-        this.employeeId = employeeId;
+    public String getEmployeeName() {
+        return employeeName; // Retourne le nom complet
     }
 
     public String getStartDate() {
         return startDate;
     }
 
-    public void setStartDate(String startDate) {
-        this.startDate = startDate;
-    }
-
     public String getEndDate() {
         return endDate;
-    }
-
-    public void setEndDate(String endDate) {
-        this.endDate = endDate;
     }
 
     public Type getType() {
         return type;
     }
 
-    public void setType(Type type) {
-        this.type = type;
-    }
-
-    @Override
-    public String toString() {
-        return "Holiday{" +
-                "id=" + id +
-                ", employeeId=" + employeeId +
-                ", startDate='" + startDate + '\'' +
-                ", endDate='" + endDate + '\'' +
-                ", type=" + type +
-                '}';
+    public void setEmployeeName(String employeeName) {
+        this.employeeName = employeeName;
     }
 }

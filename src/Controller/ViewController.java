@@ -2,6 +2,7 @@ package Controller;
 
 import View.EmployeeView;
 import View.HolidayView;
+
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 
@@ -13,22 +14,34 @@ public class ViewController {
         this.employeeView = employeeView;
         this.holidayView = holidayView;
 
-        // Button action for switching to the Holiday view
+        // Action pour passer de EmployeeView à HolidayView
         employeeView.switchViewButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                employeeView.setVisible(false);  // Hide Employee view
-                holidayView.setVisible(true);    // Show Holiday view
+                employeeView.setVisible(false);
+                holidayView.setVisible(true);
             }
         });
 
-        // Button action for switching to the Employee view
+        // Action pour passer de HolidayView à EmployeeView
         holidayView.switchViewButton.addActionListener(new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
-                holidayView.setVisible(false);  // Hide Holiday view
-                employeeView.setVisible(true);  // Show Employee view
+                holidayView.setVisible(false);
+                employeeView.setVisible(true);
             }
         });
+    }
+
+    // Méthode principale pour démarrer l'application
+    public void start() {
+        employeeView.setVisible(true); // Afficher la vue par défaut
+    }
+
+    public static void main(String[] args) {
+        EmployeeView employeeView = new EmployeeView();
+        HolidayView holidayView = new HolidayView();
+        ViewController controller = new ViewController(employeeView, holidayView);
+        controller.start();
     }
 }

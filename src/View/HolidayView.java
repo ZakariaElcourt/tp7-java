@@ -6,7 +6,8 @@ import java.awt.*;
 public class HolidayView extends JFrame {
     public JTable holidayTable;
     public JButton addButton, listButton, deleteButton, modifyButton, switchViewButton;
-    public JTextField employeeIdField, startDateField, endDateField;
+    public JComboBox<String> employeeNameComboBox;  // Liste déroulante pour les employés
+    public JTextField startDateField, endDateField;  
     public JComboBox<String> typeCombo;
 
     public HolidayView() {
@@ -15,11 +16,11 @@ public class HolidayView extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLayout(new BorderLayout());
 
-        JPanel inputPanel = new JPanel(new GridLayout(0, 2, 10, 10)); // 0 lignes et 2 colonnes
-
-        inputPanel.add(new JLabel("Employé ID:"));
-        employeeIdField = new JTextField();
-        inputPanel.add(employeeIdField);
+        // Panneau de saisie des champs
+        JPanel inputPanel = new JPanel(new GridLayout(0, 2, 10, 10));
+        inputPanel.add(new JLabel("Employé Nom Complet:"));
+        employeeNameComboBox = new JComboBox<>();
+        inputPanel.add(employeeNameComboBox);
 
         inputPanel.add(new JLabel("Date Début:"));
         startDateField = new JTextField();
@@ -35,9 +36,11 @@ public class HolidayView extends JFrame {
 
         add(inputPanel, BorderLayout.NORTH);
 
+        // Table des congés
         holidayTable = new JTable();
         add(new JScrollPane(holidayTable), BorderLayout.CENTER);
 
+        // Boutons d'action
         JPanel buttonPanel = new JPanel();
         addButton = new JButton("Ajouter");
         buttonPanel.add(addButton);
@@ -48,7 +51,7 @@ public class HolidayView extends JFrame {
         modifyButton = new JButton("Modifier");
         buttonPanel.add(modifyButton);
 
-        // Adding the navigation button to switch to the Employee view
+        // Bouton pour naviguer vers la vue Employé
         switchViewButton = new JButton("Voir les Employés");
         buttonPanel.add(switchViewButton);
 

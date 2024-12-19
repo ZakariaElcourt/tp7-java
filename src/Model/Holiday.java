@@ -16,6 +16,12 @@ public class Holiday {
         this.endDate = endDate;
         this.type = type;
     }
+    public Holiday(String employeeName, String startDate, String endDate, Type type) {
+        this.employeeName = employeeName;
+        this.startDate = startDate;
+        this.endDate = endDate;
+        this.type = type;
+    }
 
     // Constructeur pour add() et update() (sans employeeName)
     public Holiday(int employeeId, String startDate, String endDate, Type type) {

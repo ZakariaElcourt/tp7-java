@@ -6,8 +6,8 @@ import java.awt.*;
 public class HolidayView extends JFrame {
     public JTable holidayTable;
     public JButton addButton, listButton, deleteButton, modifyButton, switchViewButton;
-    public JComboBox<String> employeeNameComboBox;  // Liste déroulante pour les employés
-    public JTextField startDateField, endDateField;  
+    public JComboBox<String> employeeNameComboBox;
+    public JTextField startDateField, endDateField;
     public JComboBox<String> typeCombo;
 
     public HolidayView() {
@@ -31,7 +31,7 @@ public class HolidayView extends JFrame {
         inputPanel.add(endDateField);
 
         inputPanel.add(new JLabel("Type:"));
-        typeCombo = new JComboBox<>(new String[]{"CONGE_PAYE", "CONGE_MALADIE", "CONGE_SANS_SOLDE"});
+        typeCombo = new JComboBox<>(new String[]{"CONGE_PAYE", "CONGE_MALADIE", "CONGE_NON_PAYE"});
         inputPanel.add(typeCombo);
 
         add(inputPanel, BorderLayout.NORTH);
@@ -51,7 +51,6 @@ public class HolidayView extends JFrame {
         modifyButton = new JButton("Modifier");
         buttonPanel.add(modifyButton);
 
-        // Bouton pour naviguer vers la vue Employé
         switchViewButton = new JButton("Voir les Employés");
         buttonPanel.add(switchViewButton);
 

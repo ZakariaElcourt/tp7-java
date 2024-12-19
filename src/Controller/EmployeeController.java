@@ -25,70 +25,86 @@ public class EmployeeController {
         this.holidayView = holidayView;
 
         // Écouteur pour le bouton Ajouter
-        view.addButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                addEmployee();
-            }
-        });
+        view.addButton.addActionListener(e -> addEmployee());
 
         // Écouteur pour le bouton Lister
-        view.listButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                listEmployees();
-            }
-        });
-        // ActionListener for the "Gérer les Congés" button
-         view.switchViewButton.addActionListener(new ActionListener() {
-         @Override
-          public void actionPerformed(ActionEvent e) {
-              view.setVisible(false);  // Hide Employee view
-                holidayView.setVisible(true);  // Show Holiday view
-    }
-});
-
+        view.listButton.addActionListener(e -> listEmployees());
 
         // Écouteur pour le bouton Supprimer
-        view.deleteButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                deleteEmployee();
-            }
-        });
+        view.deleteButton.addActionListener(e -> deleteEmployee());
 
         // Écouteur pour le bouton Modifier
-        view.modifyButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                modifyEmployee();
-            }
-        });
+        view.modifyButton.addActionListener(e -> modifyEmployee());
 
         // ActionListener pour le bouton "Gérer les Congés"
-        view.switchViewButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                view.setVisible(false); // Hide the Employee View
-                holidayView.setVisible(true); // Show the Holiday View
+        view.switchViewButton.addActionListener(e -> {
+            view.setVisible(false); // Cacher la vue des employés
+            holidayView.setVisible(true); // Afficher la vue des congés
+        });
+
+        // Ajouter un écouteur de sélection sur la table des employés
+        view.employeeTable.getSelectionModel().addListSelectionListener(e -> {
+            if (!e.getValueIsAdjusting()) {
+                int selectedRow = view.employeeTable.getSelectedRow();
+                if (selectedRow != -1) {
+                    // Récupérer les données de la ligne sélectionnée
+                    int id = (int) view.employeeTable.getValueAt(selectedRow, 0);
+                    String nom = (String) view.employeeTable.getValueAt(selectedRow, 1);
+                    String prenom = (String) view.employeeTable.getValueAt(selectedRow, 2);
+                    String email = (String) view.employeeTable.getValueAt(selectedRow, 3);
+                    String phone = (String) view.employeeTable.getValueAt(selectedRow, 4);
+                    double salaire = (double) view.employeeTable.getValueAt(selectedRow, 5);
+                    Role role = Role.valueOf(view.employeeTable.getValueAt(selectedRow, 6).toString());
+                    Poste poste = Poste.valueOf(view.employeeTable.getValueAt(selectedRow, 7).toString());
+
+                    // Remplir les champs de modification avec les valeurs de la ligne sélectionnée
+                    view.nameField.setText(nom);
+                    view.surnameField.setText(prenom);
+                    view.emailField.setText(email);
+                    view.phoneField.setText(phone);
+                    view.salaryField.setText(String.valueOf(salaire));
+                    view.roleCombo.setSelectedItem(role.toString());
+                    view.posteCombo.setSelectedItem(poste.toString());
+
+                    // Sauvegarder l'ID de l'employé dans le bouton de modification pour une mise à jour
+                    view.modifyButton.setActionCommand(String.valueOf(id));
+                }
             }
         });
+
+        // Charger la liste des employés au démarrage
+        listEmployees();
     }
 
-    // Méthodes pour gérer les employés (inchangées)
+    // Méthode pour ajouter un employé avec validation
     private void addEmployee() {
         try {
-            String nom = view.nameField.getText();
-            String prenom = view.surnameField.getText();
-            String email = view.emailField.getText();
-            String phone = view.phoneField.getText();
-            double salaire = Double.parseDouble(view.salaryField.getText());
+            String nom = view.nameField.getText().trim();
+            String prenom = view.surnameField.getText().trim();
+            String email = view.emailField.getText().trim();
+            String phone = view.phoneField.getText().trim();
+            String salaireText = view.salaryField.getText().trim();
+
+            // Validation des champs
+            if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() || phone.isEmpty() || salaireText.isEmpty()) {
+                JOptionPane.showMessageDialog(view, "Tous les champs sont obligatoires.");
+                return;
+            }
+            if (!email.contains("@")) {
+                JOptionPane.showMessageDialog(view, "Veuillez entrer une adresse email valide.");
+                return;
+            }
+            double salaire = Double.parseDouble(salaireText);
+
             Role role = Role.valueOf(view.roleCombo.getSelectedItem().toString().toUpperCase());
             Poste poste = Poste.valueOf(view.posteCombo.getSelectedItem().toString().toUpperCase());
 
             Employee employee = new Employee(nom, prenom, email, phone, salaire, role, poste);
             dao.add(employee);
             JOptionPane.showMessageDialog(view, "Employé ajouté avec succès.");
+            listEmployees(); // Rafraîchir la liste
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(view, "Salaire invalide.");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
         }
@@ -109,16 +125,6 @@ public class EmployeeController {
 
     private void deleteEmployee() {
         try {
-            int id = Integer.parseInt(JOptionPane.showInputDialog(view, "Entrez l'ID de l'employé à supprimer :"));
-            dao.delete(id);
-            JOptionPane.showMessageDialog(view, "Employé supprimé avec succès.");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
-        }
-    }
-
-    private void modifyEmployee() {
-        try {
             int selectedRow = view.employeeTable.getSelectedRow();
             if (selectedRow == -1) {
                 JOptionPane.showMessageDialog(view, "Veuillez sélectionner un employé dans le tableau.");
@@ -126,19 +132,52 @@ public class EmployeeController {
             }
 
             int id = (int) view.employeeTable.getValueAt(selectedRow, 0);
-            String nom = view.nameField.getText();
-            String prenom = view.surnameField.getText();
-            String email = view.emailField.getText();
-            String phone = view.phoneField.getText();
-            double salaire = Double.parseDouble(view.salaryField.getText());
-            Role role = Role.valueOf(view.roleCombo.getSelectedItem().toString().toUpperCase());
-            Poste poste = Poste.valueOf(view.posteCombo.getSelectedItem().toString().toUpperCase());
+            dao.delete(id);
 
-            Employee updatedEmployee = new Employee(nom, prenom, email, phone, salaire, role, poste);
-            dao.update(updatedEmployee, id);
+            JOptionPane.showMessageDialog(view, "Employé supprimé avec succès.");
+            listEmployees(); // Rafraîchir la liste
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
+        }
+    }
 
-            JOptionPane.showMessageDialog(view, "Employé mis à jour avec succès.");
-            listEmployees();
+    private void modifyEmployee() {
+        try {
+            // Récupérer l'ID de l'employé à partir du bouton de modification
+            String actionCommand = view.modifyButton.getActionCommand();
+            if (actionCommand != null && !actionCommand.trim().isEmpty()) {
+                int id = Integer.parseInt(actionCommand.trim());
+
+                String nom = view.nameField.getText().trim();
+                String prenom = view.surnameField.getText().trim();
+                String email = view.emailField.getText().trim();
+                String phone = view.phoneField.getText().trim();
+                String salaireText = view.salaryField.getText().trim();
+
+                // Validation des champs
+                if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() || phone.isEmpty() || salaireText.isEmpty()) {
+                    JOptionPane.showMessageDialog(view, "Tous les champs sont obligatoires.");
+                    return;
+                }
+                if (!email.contains("@")) {
+                    JOptionPane.showMessageDialog(view, "Veuillez entrer une adresse email valide.");
+                    return;
+                }
+                double salaire = Double.parseDouble(salaireText);
+
+                Role role = Role.valueOf(view.roleCombo.getSelectedItem().toString().toUpperCase());
+                Poste poste = Poste.valueOf(view.posteCombo.getSelectedItem().toString().toUpperCase());
+
+                Employee updatedEmployee = new Employee(nom, prenom, email, phone, salaire, role, poste);
+                dao.update(updatedEmployee, id);
+
+                JOptionPane.showMessageDialog(view, "Employé mis à jour avec succès.");
+                listEmployees(); // Rafraîchir la liste
+            } else {
+                JOptionPane.showMessageDialog(view, "Veuillez sélectionner un employé à modifier.");
+            }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(view, "Salaire invalide.");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
         }

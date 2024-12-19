@@ -10,53 +10,50 @@ import java.util.List;
 public class HolidayDAOImpl implements GenericDAO<Holiday> {
 
     // Constants for SQL queries
-    private static final String INSERT_HOLIDAY_SQL = "INSERT INTO Holiday (employeeId, startDate, endDate, type) VALUES (?, ?, ?, ?)";
-    private static final String DELETE_HOLIDAY_SQL = "DELETE FROM Holiday WHERE id = ?";
-    private static final String SELECT_ALL_HOLIDAY_SQL = "SELECT h.id, CONCAT(e.nom, ' ', e.prenom) AS employeeName, h.startDate, h.endDate, h.type FROM Holiday h JOIN Employee e ON h.employeeId = e.id";
-    private static final String SELECT_HOLIDAY_BY_ID_SQL = "SELECT h.id, CONCAT(e.nom, ' ', e.prenom) AS employeeName, h.startDate, h.endDate, h.type FROM Holiday h JOIN Employee e ON h.employeeId = e.id WHERE h.id = ?";
-    private static final String SELECT_EMPLOYEE_ID_BY_NAME_SQL = "SELECT id FROM Employee WHERE CONCAT(nom, ' ', prenom) = ?";
-    private static final String SELECT_ALL_EMPLOYEE_NAMES_SQL = "SELECT CONCAT(nom, ' ', prenom) AS fullName FROM Employee";
-
-    // Method to add a holiday
+    private static final String INSERT_HOLIDAY_SQL = "INSERT INTO holiday (employeeId, startDate, endDate, type) VALUES (?, ?, ?, ?)";
+    private static final String DELETE_HOLIDAY_SQL = "DELETE FROM holiday WHERE id = ?";
+    private static final String SELECT_ALL_HOLIDAY_SQL = "SELECT h.id, CONCAT(e.nom, ' ', e.prenom) AS employeeName, h.startDate, h.endDate, h.type FROM holiday h JOIN employe e ON h.employeeId = e.id";
+    private static final String SELECT_HOLIDAY_BY_ID_SQL = "SELECT h.id, CONCAT(e.nom, ' ', e.prenom) AS employeeName, h.startDate, h.endDate, h.type FROM holiday h JOIN employe e ON h.employeeId = e.id WHERE h.id = ?";
+    private static final String SELECT_EMPLOYEE_ID_BY_NAME_SQL = "SELECT id FROM employe WHERE CONCAT(nom, ' ', prenom) = ?";
+    // Méthode pour ajouter un congé
     @Override
     public void add(Holiday holiday) {
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(INSERT_HOLIDAY_SQL)) {
-            // Retrieve the employee ID based on the employee name
             int employeeId = getEmployeeIdByName(holiday.getEmployeeName());
             if (employeeId == -1) {
-                System.out.println("Error: Employee not found.");
+                System.out.println("Erreur : Employé introuvable.");
                 return;
             }
             stmt.setInt(1, employeeId);
             stmt.setString(2, holiday.getStartDate());
             stmt.setString(3, holiday.getEndDate());
-            stmt.setString(4, holiday.getType().name()); // Store the enum as a string
+            stmt.setString(4, holiday.getType().name());
             stmt.executeUpdate();
-            System.out.println("Holiday added successfully.");
+            System.out.println("Congé ajouté avec succès.");
         } catch (SQLException e) {
-            System.err.println("Error adding holiday: " + e.getMessage());
+            System.err.println("Erreur lors de l'ajout du congé : " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    // Method to delete a holiday by ID
+    // Méthode pour supprimer un congé par ID
     @Override
     public void delete(int id) {
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(DELETE_HOLIDAY_SQL)) {
             stmt.setInt(1, id);
             int rowsDeleted = stmt.executeUpdate();
             if (rowsDeleted > 0) {
-                System.out.println("Holiday deleted successfully.");
+                System.out.println("Congé supprimé avec succès.");
             } else {
-                System.out.println("No holiday found with this ID.");
+                System.out.println("Aucun congé trouvé avec cet ID.");
             }
         } catch (SQLException e) {
-            System.err.println("Error deleting holiday: " + e.getMessage());
+            System.err.println("Erreur lors de la suppression du congé : " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    // Method to list all holidays
+    // Méthode pour lister tous les congés
     @Override
     public List<Holiday> listAll() {
         List<Holiday> holidays = new ArrayList<>();
@@ -64,21 +61,21 @@ public class HolidayDAOImpl implements GenericDAO<Holiday> {
             while (rs.next()) {
                 Holiday holiday = new Holiday(
                         rs.getInt("id"),
-                        rs.getString("employeeName"),  // Concatenated employee name (nom + prenom)
+                        rs.getString("employeeName"),
                         rs.getString("startDate"),
                         rs.getString("endDate"),
-                        Type.valueOf(rs.getString("type"))  // Convert string back to enum
+                        Type.valueOf(rs.getString("type"))
                 );
                 holidays.add(holiday);
             }
         } catch (SQLException e) {
-            System.err.println("Error listing holidays: " + e.getMessage());
+            System.err.println("Erreur lors de la récupération des congés : " + e.getMessage());
             e.printStackTrace();
         }
         return holidays;
     }
 
-    // Method to find a holiday by ID
+    // Méthode pour trouver un congé par ID
     @Override
     public Holiday findById(int id) {
         try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(SELECT_HOLIDAY_BY_ID_SQL)) {
@@ -94,71 +91,77 @@ public class HolidayDAOImpl implements GenericDAO<Holiday> {
                 );
             }
         } catch (SQLException e) {
-            System.err.println("Error finding holiday by ID: " + e.getMessage());
+            System.err.println("Erreur lors de la recherche du congé : " + e.getMessage());
             e.printStackTrace();
         }
         return null;
     }
 
-    // Method to update a holiday by ID
+    // Méthode pour mettre à jour un congé
     @Override
     public void update(Holiday holiday, int id) {
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement("UPDATE Holiday SET employeeId = ?, startDate = ?, endDate = ?, type = ? WHERE id = ?")) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement("UPDATE holiday SET employeeId = ?, startDate = ?, endDate = ?, type = ? WHERE id = ?")) {
             int employeeId = getEmployeeIdByName(holiday.getEmployeeName());
             if (employeeId == -1) {
-                System.out.println("Error: Employee not found.");
+                System.out.println("Erreur : Employé introuvable.");
                 return;
             }
             stmt.setInt(1, employeeId);
             stmt.setString(2, holiday.getStartDate());
             stmt.setString(3, holiday.getEndDate());
-            stmt.setString(4, holiday.getType().name());  // Store enum as string
+            stmt.setString(4, holiday.getType().name());
             stmt.setInt(5, id);
             int rowsUpdated = stmt.executeUpdate();
             if (rowsUpdated > 0) {
-                System.out.println("Holiday updated successfully.");
+                System.out.println("Congé mis à jour avec succès.");
             } else {
-                System.out.println("No holiday found with this ID.");
+                System.out.println("Aucun congé trouvé avec cet ID.");
             }
         } catch (SQLException e) {
-            System.err.println("Error updating holiday: " + e.getMessage());
+            System.err.println("Erreur lors de la mise à jour du congé : " + e.getMessage());
             e.printStackTrace();
         }
     }
 
-    // Method to retrieve employee ID by full name (concatenated nom + prenom)
-    public int getEmployeeIdByName(String employeeName) { // changer 'private' en 'public'
-    try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(SELECT_EMPLOYEE_ID_BY_NAME_SQL)) {
-        stmt.setString(1, employeeName);
-        ResultSet rs = stmt.executeQuery();
-        if (rs.next()) {
-            return rs.getInt("id");
+    // Méthode pour récupérer l'ID de l'employé par nom complet
+    public int getEmployeeIdByName(String employeeName) {
+        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(SELECT_EMPLOYEE_ID_BY_NAME_SQL)) {
+            stmt.setString(1, employeeName);
+            ResultSet rs = stmt.executeQuery();
+            if (rs.next()) {
+                return rs.getInt("id");
+            }
+        } catch (SQLException e) {
+            System.err.println("Erreur lors de la récupération de l'ID employé : " + e.getMessage());
+            e.printStackTrace();
         }
-    } catch (SQLException e) {
-        System.err.println("Error retrieving employee ID by name: " + e.getMessage());
-        e.printStackTrace();
+        return -1;
     }
-    return -1;  // Return -1 if the employee is not found
-}
 
-    // Method to retrieve all employee names for the combo box
+    // Méthode pour récupérer tous les noms des employés
     public List<String> getAllEmployeeNames() {
         List<String> employeeNames = new ArrayList<>();
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_EMPLOYEE_NAMES_SQL); ResultSet rs = stmt.executeQuery()) {
+        String query = "SELECT CONCAT(nom, ' ', prenom) AS fullName FROM employe";
+
+        try (Connection conn = DBConnection.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query);
+             ResultSet rs = stmt.executeQuery()) {
+
             while (rs.next()) {
                 String fullName = rs.getString("fullName");
+                System.out.println("Nom récupéré : " + fullName); // Pour debug
                 employeeNames.add(fullName);
             }
         } catch (SQLException e) {
-            System.err.println("Error retrieving all employee names: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Erreur lors de la récupération des noms des employés : " + e.getMessage());
         }
-        System.out.println("Employee Names: " + employeeNames);  // Debugging output
+
         return employeeNames;
     }
     
+    
 
-    // Method to retrieve all holiday types (Enum)
+    // Méthode pour récupérer les types de congés (Enum)
     public List<Type> getAllHolidayTypes() {
         List<Type> holidayTypes = new ArrayList<>();
         for (Type type : Type.values()) {

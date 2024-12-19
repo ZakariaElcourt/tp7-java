@@ -125,21 +125,35 @@ public class EmployeeController {
 
     private void deleteEmployee() {
         try {
-            int selectedRow = view.employeeTable.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(view, "Veuillez sélectionner un employé dans le tableau.");
+            // Demander à l'administrateur d'entrer l'ID de l'employé à supprimer
+            String idText = JOptionPane.showInputDialog(view, "Entrez l'ID de l'employé à supprimer :");
+    
+            if (idText == null || idText.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(view, "L'ID ne peut pas être vide.");
                 return;
             }
-
-            int id = (int) view.employeeTable.getValueAt(selectedRow, 0);
+    
+            int id = Integer.parseInt(idText.trim());
+    
+            // Vérifier si l'employé existe
+            Employee employeeToDelete = dao.findById(id);
+            if (employeeToDelete == null) {
+                JOptionPane.showMessageDialog(view, "Aucun employé trouvé avec cet ID.");
+                return;
+            }
+    
+            // Supprimer l'employé
             dao.delete(id);
-
+    
             JOptionPane.showMessageDialog(view, "Employé supprimé avec succès.");
-            listEmployees(); // Rafraîchir la liste
+            listEmployees(); // Rafraîchir la liste des employés
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(view, "L'ID doit être un nombre entier.");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
         }
     }
+    
 
     private void modifyEmployee() {
         try {

@@ -159,15 +159,29 @@ public class HolidayController {
             String input = JOptionPane.showInputDialog(view, "Veuillez entrer l'ID du congé à supprimer:");
             if (input != null && !input.trim().isEmpty()) {
                 int id = Integer.parseInt(input.trim());
-                dao.delete(id);
-                loadEmployeeNames(); 
-                refreshHolidayTable();
-                JOptionPane.showMessageDialog(view, "Congé supprimé avec succès.");
+    
+                // Demander confirmation avant de supprimer
+                int confirm = JOptionPane.showConfirmDialog(view, 
+                        "Êtes-vous sûr de vouloir supprimer le congé avec l'ID " + id + " ?", 
+                        "Confirmation de suppression", 
+                        JOptionPane.YES_NO_OPTION);
+    
+                if (confirm == JOptionPane.YES_OPTION) {
+                    dao.delete(id); // Supprimer le congé
+                    loadEmployeeNames();
+                    refreshHolidayTable();
+                    JOptionPane.showMessageDialog(view, "Congé supprimé avec succès.");
+                } else {
+                    JOptionPane.showMessageDialog(view, "Suppression annulée.");
+                }
             } else {
-                JOptionPane.showMessageDialog(view, "ID de congé non valide.");
+                JOptionPane.showMessageDialog(view, "ID de congé non valide ou action annulée.");
             }
+        } catch (NumberFormatException ex) {
+            JOptionPane.showMessageDialog(view, "ID invalide. Veuillez entrer un nombre valide.");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, "Erreur : " + ex.getMessage());
         }
     }
+    
 }

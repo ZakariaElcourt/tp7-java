@@ -125,36 +125,39 @@ public class EmployeeController {
 
     private void deleteEmployee() {
         try {
-            // Demander à l'administrateur d'entrer l'ID de l'employé à supprimer
-            String idText = JOptionPane.showInputDialog(view, "Entrez l'ID de l'employé à supprimer :");
+            // Demander l'ID de l'employé à supprimer
+            String idInput = JOptionPane.showInputDialog(view, 
+                    "Entrez l'ID de l'employé à supprimer :", 
+                    "Suppression d'un employé", 
+                    JOptionPane.QUESTION_MESSAGE);
     
-            if (idText == null || idText.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(view, "L'ID ne peut pas être vide.");
+            if (idInput == null || idInput.trim().isEmpty()) {
+                JOptionPane.showMessageDialog(view, "Aucun ID saisi. Suppression annulée.");
                 return;
             }
     
-            int id = Integer.parseInt(idText.trim());
+            int id = Integer.parseInt(idInput.trim());
     
-            // Vérifier si l'employé existe
-            Employee employeeToDelete = dao.findById(id);
-            if (employeeToDelete == null) {
-                JOptionPane.showMessageDialog(view, "Aucun employé trouvé avec cet ID.");
-                return;
+            // Demander confirmation avant de supprimer
+            int confirm = JOptionPane.showConfirmDialog(view, 
+                    "Êtes-vous sûr de vouloir supprimer l'employé avec l'ID " + id + " ?", 
+                    "Confirmation de suppression", 
+                    JOptionPane.YES_NO_OPTION);
+    
+            if (confirm == JOptionPane.YES_OPTION) {
+                // Supprimer l'employé
+                dao.delete(id);
+                JOptionPane.showMessageDialog(view, "Employé supprimé avec succès.");
+                listEmployees(); // Rafraîchir la liste
+            } else {
+                JOptionPane.showMessageDialog(view, "Suppression annulée.");
             }
-    
-            // Supprimer l'employé
-            dao.delete(id);
-    
-            JOptionPane.showMessageDialog(view, "Employé supprimé avec succès.");
-            listEmployees(); // Rafraîchir la liste des employés
         } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(view, "L'ID doit être un nombre entier.");
+            JOptionPane.showMessageDialog(view, "ID invalide. Veuillez entrer un nombre valide.");
         } catch (Exception ex) {
-            JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
+            JOptionPane.showMessageDialog(view, "Erreur : " + ex.getMessage());
         }
     }
-    
-
     private void modifyEmployee() {
         try {
             // Récupérer l'ID de l'employé à partir du bouton de modification

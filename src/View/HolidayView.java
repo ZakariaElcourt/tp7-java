@@ -51,7 +51,7 @@ public class HolidayView extends JFrame {
         modifyButton = new JButton("Modifier");
         buttonPanel.add(modifyButton);
 
-        switchViewButton = new JButton("Voir les Employés");
+        switchViewButton = new JButton("Gerer les Employés");
         buttonPanel.add(switchViewButton);
 
         add(buttonPanel, BorderLayout.SOUTH);

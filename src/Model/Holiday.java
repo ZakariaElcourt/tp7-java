@@ -1,12 +1,12 @@
 package Model;
 
 public class Holiday {
-    private int id; // Identifiant du congé
-    private int employeeId; // ID de l'employé
-    private String employeeName; // Nom complet de l'employé
-    private String startDate; // Date de début
-    private String endDate;   // Date de fin
-    private Type type;        // Type de congé (enum)
+    private int id;
+    private int employeeId;
+    private String employeeName;
+    private String startDate;
+    private String endDate;
+    private Type type;
 
     // Constructeur avec employeeName pour listAll()
     public Holiday(int id, String employeeName, String startDate, String endDate, Type type) {
@@ -16,6 +16,7 @@ public class Holiday {
         this.endDate = endDate;
         this.type = type;
     }
+
     public Holiday(String employeeName, String startDate, String endDate, Type type) {
         this.employeeName = employeeName;
         this.startDate = startDate;
@@ -23,7 +24,6 @@ public class Holiday {
         this.type = type;
     }
 
-    // Constructeur pour add() et update() (sans employeeName)
     public Holiday(int employeeId, String startDate, String endDate, Type type) {
         this.employeeId = employeeId;
         this.startDate = startDate;
@@ -31,7 +31,6 @@ public class Holiday {
         this.type = type;
     }
 
-    // Getters et Setters
     public int getId() {
         return id;
     }
@@ -41,7 +40,7 @@ public class Holiday {
     }
 
     public String getEmployeeName() {
-        return employeeName; // Retourne le nom complet
+        return employeeName;
     }
 
     public String getStartDate() {

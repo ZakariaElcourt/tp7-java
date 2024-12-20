@@ -10,8 +10,6 @@ import View.HolidayView;
 
 import javax.swing.*;
 import javax.swing.table.DefaultTableModel;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.util.List;
 
 public class EmployeeController {
@@ -76,7 +74,7 @@ public class EmployeeController {
         listEmployees();
     }
 
-    // Méthode pour ajouter un employé avec validation
+    // Méthode pour ajouter un employé sans vérification de doublons
     private void addEmployee() {
         try {
             String nom = view.nameField.getText().trim();
@@ -90,10 +88,13 @@ public class EmployeeController {
                 JOptionPane.showMessageDialog(view, "Tous les champs sont obligatoires.");
                 return;
             }
-            if (!email.contains("@")) {
-                JOptionPane.showMessageDialog(view, "Veuillez entrer une adresse email valide.");
+
+            // Validation de l'adresse e-mail
+            if (!isValidEmail(email)) {
+                JOptionPane.showMessageDialog(view, "Veuillez entrer une adresse e-mail valide.");
                 return;
             }
+
             double salaire = Double.parseDouble(salaireText);
 
             Role role = Role.valueOf(view.roleCombo.getSelectedItem().toString().toUpperCase());
@@ -108,6 +109,11 @@ public class EmployeeController {
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
         }
+    }
+
+    private boolean isValidEmail(String email) {
+        String emailRegex = "^[\\w.-]+@[\\w.-]+\\.[a-zA-Z]{2,}$";
+        return email.matches(emailRegex);
     }
 
     private void listEmployees() {
@@ -125,42 +131,31 @@ public class EmployeeController {
 
     private void deleteEmployee() {
         try {
-            // Demander l'ID de l'employé à supprimer
-            String idInput = JOptionPane.showInputDialog(view, 
-                    "Entrez l'ID de l'employé à supprimer :", 
-                    "Suppression d'un employé", 
-                    JOptionPane.QUESTION_MESSAGE);
-    
-            if (idInput == null || idInput.trim().isEmpty()) {
-                JOptionPane.showMessageDialog(view, "Aucun ID saisi. Suppression annulée.");
+            int selectedRow = view.employeeTable.getSelectedRow();
+            if (selectedRow == -1) {
+                JOptionPane.showMessageDialog(view, "Veuillez sélectionner un employé à supprimer.");
                 return;
             }
-    
-            int id = Integer.parseInt(idInput.trim());
-    
-            // Demander confirmation avant de supprimer
-            int confirm = JOptionPane.showConfirmDialog(view, 
-                    "Êtes-vous sûr de vouloir supprimer l'employé avec l'ID " + id + " ?", 
-                    "Confirmation de suppression", 
+
+            int id = (int) view.employeeTable.getValueAt(selectedRow, 0);
+
+            int confirm = JOptionPane.showConfirmDialog(view,
+                    "Êtes-vous sûr de vouloir supprimer l'employé avec l'ID " + id + " ?",
+                    "Confirmation de suppression",
                     JOptionPane.YES_NO_OPTION);
-    
+
             if (confirm == JOptionPane.YES_OPTION) {
-                // Supprimer l'employé
                 dao.delete(id);
                 JOptionPane.showMessageDialog(view, "Employé supprimé avec succès.");
-                listEmployees(); // Rafraîchir la liste
-            } else {
-                JOptionPane.showMessageDialog(view, "Suppression annulée.");
+                listEmployees();
             }
-        } catch (NumberFormatException ex) {
-            JOptionPane.showMessageDialog(view, "ID invalide. Veuillez entrer un nombre valide.");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, "Erreur : " + ex.getMessage());
         }
     }
+
     private void modifyEmployee() {
         try {
-            // Récupérer l'ID de l'employé à partir du bouton de modification
             String actionCommand = view.modifyButton.getActionCommand();
             if (actionCommand != null && !actionCommand.trim().isEmpty()) {
                 int id = Integer.parseInt(actionCommand.trim());
@@ -171,13 +166,12 @@ public class EmployeeController {
                 String phone = view.phoneField.getText().trim();
                 String salaireText = view.salaryField.getText().trim();
 
-                // Validation des champs
                 if (nom.isEmpty() || prenom.isEmpty() || email.isEmpty() || phone.isEmpty() || salaireText.isEmpty()) {
                     JOptionPane.showMessageDialog(view, "Tous les champs sont obligatoires.");
                     return;
                 }
-                if (!email.contains("@")) {
-                    JOptionPane.showMessageDialog(view, "Veuillez entrer une adresse email valide.");
+                if (!isValidEmail(email)) {
+                    JOptionPane.showMessageDialog(view, "Veuillez entrer une adresse e-mail valide.");
                     return;
                 }
                 double salaire = Double.parseDouble(salaireText);
@@ -189,7 +183,8 @@ public class EmployeeController {
                 dao.update(updatedEmployee, id);
 
                 JOptionPane.showMessageDialog(view, "Employé mis à jour avec succès.");
-                listEmployees(); // Rafraîchir la liste
+                listEmployees();
+                clearFields();
             } else {
                 JOptionPane.showMessageDialog(view, "Veuillez sélectionner un employé à modifier.");
             }
@@ -199,4 +194,15 @@ public class EmployeeController {
             JOptionPane.showMessageDialog(view, "Erreur: " + ex.getMessage());
         }
     }
+    public void clearFields() {
+        view.nameField.setText("");
+        view.surnameField.setText("");
+        view.emailField.setText("");
+        view.phoneField.setText("");
+        view.salaryField.setText("");
+        view.roleCombo.setSelectedIndex(0); // Réinitialise au premier élément
+        view.posteCombo.setSelectedIndex(0); // Réinitialise au premier élément
+        view.modifyButton.setActionCommand(""); // Effacer l'ID stocké
+    }
+    
 }

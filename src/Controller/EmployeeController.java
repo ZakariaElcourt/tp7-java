@@ -104,6 +104,8 @@ public class EmployeeController {
             dao.add(employee);
             JOptionPane.showMessageDialog(view, "Employé ajouté avec succès.");
             listEmployees(); // Rafraîchir la liste
+            clearFields();
+
         } catch (NumberFormatException ex) {
             JOptionPane.showMessageDialog(view, "Salaire invalide.");
         } catch (Exception ex) {

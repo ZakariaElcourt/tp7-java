@@ -106,6 +106,7 @@ public class HolidayController {
             Holiday holiday = new Holiday(employeeName, startDate, endDate, type);
             dao.add(holiday);
             refreshHolidayTable();
+            clearFields();
             JOptionPane.showMessageDialog(view, "Congé ajouté avec succès.");
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(view, "Erreur : " + ex.getMessage());
@@ -117,22 +118,29 @@ public class HolidayController {
             String actionCommand = view.modifyButton.getActionCommand();
             if (actionCommand != null && !actionCommand.isEmpty()) {
                 int id = Integer.parseInt(actionCommand);
-
+        
                 String startDate = view.startDateField.getText();
                 String endDate = view.endDateField.getText();
                 Type type = Type.valueOf(view.typeCombo.getSelectedItem().toString().toUpperCase());
-
+        
                 if (!isValidDate(startDate) || !isValidDate(endDate)) {
                     throw new IllegalArgumentException("Les dates doivent être au format YYYY-MM-DD.");
                 }
                 if (!isEndDateAfterStartDate(startDate, endDate)) {
                     throw new IllegalArgumentException("La date de fin doit être après la date de début.");
                 }
-
-                Holiday holiday = new Holiday(null, startDate, endDate, type);
+        
+                // Get employee name from the combo box
+                String employeeName = (String) view.employeeNameComboBox.getSelectedItem();
+        
+                // Create a new Holiday object with the selected details
+                Holiday holiday = new Holiday(employeeName, startDate, endDate, type);
+                // Call the update method
                 dao.update(holiday, id);
+        
+                // Refresh the table after the update
                 refreshHolidayTable();
-                clearFields(); 
+                clearFields();
                 JOptionPane.showMessageDialog(view, "Congé modifié avec succès.");
             } else {
                 JOptionPane.showMessageDialog(view, "Veuillez sélectionner un congé.");
@@ -141,6 +149,8 @@ public class HolidayController {
             JOptionPane.showMessageDialog(view, "Erreur : " + ex.getMessage());
         }
     }
+    
+    
     private void clearFields() {
         // Réactiver le combo box des employés
         view.employeeNameComboBox.setEnabled(true);

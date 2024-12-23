@@ -158,60 +158,66 @@ public Employee getEmployeeById(int employeeId) {
 
     // Méthode pour mettre à jour un congé
     @Override
+    
     public void update(Holiday holiday, int id) {
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement("UPDATE holiday SET employeeId = ?, startDate = ?, endDate = ?, type = ? WHERE id = ?")) {
-            int employeeId = getEmployeeIdByName(holiday.getEmployeeName());
-            if (employeeId == -1) {
-                System.out.println("Erreur : Employé introuvable.");
+    try (Connection conn = DBConnection.getConnection(); 
+         PreparedStatement stmt = conn.prepareStatement("UPDATE holiday SET employeeId = ?, startDate = ?, endDate = ?, type = ? WHERE id = ?")) {
+         
+        // Vérification de l'ID de l'employé
+        int employeeId = getEmployeeIdByName(holiday.getEmployeeName());
+        if (employeeId == -1) {
+            System.out.println("Erreur : Employé introuvable.");
+            return;
+        }
+
+        // Calcul de la durée du congé avant et après modification
+        Holiday existingHoliday = findById(id); // On récupère le congé existant
+        Employee employee = getEmployeeById(employeeId); // On récupère l'employé
+        int previousDuration = (int) java.time.temporal.ChronoUnit.DAYS.between(
+                java.time.LocalDate.parse(existingHoliday.getStartDate()),
+                java.time.LocalDate.parse(existingHoliday.getEndDate())
+        );
+        int newDuration = (int) java.time.temporal.ChronoUnit.DAYS.between(
+                java.time.LocalDate.parse(holiday.getStartDate()),
+                java.time.LocalDate.parse(holiday.getEndDate())
+        );
+
+        // Mise à jour du solde en fonction de la modification
+        if (newDuration > previousDuration) {
+            int additionalDays = newDuration - previousDuration;
+            if (employee.getSolde() >= additionalDays) {
+                employee.reduceSolde(additionalDays);
+                updateEmployeeSolde(employee); // Mise à jour du solde dans la base
+            } else {
+                System.out.println("Erreur : Solde de congés insuffisant pour la modification.");
                 return;
             }
-    
-            // Get the previous holiday to calculate the difference in duration
-            Holiday existingHoliday = findById(id);
-            Employee employee = getEmployeeById(employeeId);
-            int previousDuration = (int) java.time.temporal.ChronoUnit.DAYS.between(
-                    java.time.LocalDate.parse(existingHoliday.getStartDate()),
-                    java.time.LocalDate.parse(existingHoliday.getEndDate())
-            );
-    
-            int newDuration = (int) java.time.temporal.ChronoUnit.DAYS.between(
-                    java.time.LocalDate.parse(holiday.getStartDate()), 
-                    java.time.LocalDate.parse(holiday.getEndDate())
-            );
-    
-            // Adjust the balance based on the change in duration
-            if (newDuration > previousDuration) {
-                int additionalDays = newDuration - previousDuration;
-                if (employee.getSolde() >= additionalDays) {
-                    employee.reduceSolde(additionalDays);
-                    updateEmployeeSolde(employee);
-                } else {
-                    System.out.println("Erreur : Solde de congés insuffisant pour la modification.");
-                    return;
-                }
-            } else {
-                // If duration is reduced, increase the balance
-                int daysToAdd = previousDuration - newDuration;
-                employee.reduceSolde(daysToAdd);
-                updateEmployeeSolde(employee);
-            }
-    
-            stmt.setInt(1, employeeId);
-            stmt.setString(2, holiday.getStartDate());
-            stmt.setString(3, holiday.getEndDate());
-            stmt.setString(4, holiday.getType().name());
-            stmt.setInt(5, id);
-            int rowsUpdated = stmt.executeUpdate();
-            if (rowsUpdated > 0) {
-                System.out.println("Congé mis à jour avec succès.");
-            } else {
-                System.out.println("Aucun congé trouvé avec cet ID.");
-            }
-        } catch (SQLException e) {
-            System.err.println("Erreur lors de la mise à jour du congé : " + e.getMessage());
-            e.printStackTrace();
+        } else {
+            // Si la durée est réduite, on réajuste le solde
+            int daysToAdd = previousDuration - newDuration;
+            employee.addSolde(daysToAdd); // Ajout au solde
+            updateEmployeeSolde(employee); // Mise à jour du solde dans la base
         }
+
+        // Préparer la requête pour la mise à jour
+        stmt.setInt(1, employeeId);
+        stmt.setString(2, holiday.getStartDate());
+        stmt.setString(3, holiday.getEndDate());
+        stmt.setString(4, holiday.getType().name());
+        stmt.setInt(5, id);
+        
+        int rowsUpdated = stmt.executeUpdate();
+        if (rowsUpdated > 0) {
+            System.out.println("Congé mis à jour avec succès.");
+        } else {
+            System.out.println("Aucun congé trouvé avec cet ID.");
+        }
+    } catch (SQLException e) {
+        System.err.println("Erreur lors de la mise à jour du congé : " + e.getMessage());
+        e.printStackTrace();
     }
+}
+
 
     public boolean isHolidayOverlapping(int employeeId, String startDate, String endDate) {
         String query = "SELECT * FROM holiday WHERE employeeId = ? AND (" +

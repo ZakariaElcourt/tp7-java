@@ -7,7 +7,6 @@ import View.HolidayView;
 
 public class Main {
     public static void main(String[] args) {
-        // Créer les vues
         EmployeeView employeeView = new EmployeeView();
         HolidayView holidayView = new HolidayView();
 

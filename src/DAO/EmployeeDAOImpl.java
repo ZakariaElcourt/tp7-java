@@ -1,139 +1,137 @@
 package DAO;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+
+import Controller.EmployeeController;
+import Controller.HolidayController;
 import Model.Employee;
 import Model.Poste;
 import Model.Role;
+import View.EmployeeView;
 
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.List;
-
-public class EmployeeDAOImpl implements GenericDAO<Employee> {
-
+public class EmployeeDAOImpl implements GeneriqueDAOI<Employee>{
+    private Connection connection;
+    public EmployeeDAOImpl() {
+         try {
+            connection = DBConnection.getConnection();
+        } catch (SQLException e) {
+            e.printStackTrace();
+            throw new RuntimeException("Erreur lors de l'initialisation de la connexion à la base de données", e);
+        }
+    }
     @Override
-    public void add(Employee employee) {
-        String sql = "INSERT INTO Employe (nom, prenom, email, phone, salaire, role, poste) VALUES (?, ?, ?, ?, ?, ?, ?)";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+    public List<Employee> afficher() {
+        EmployeeController.viderLesChamps();
+        String SQL = "SELECT * FROM employee";
+        List<Employee> employees = new ArrayList<>();
+        try (PreparedStatement stmt = connection.prepareStatement(SQL)) {
+            try (ResultSet rset = stmt.executeQuery()) {
+                while (rset.next()) {
+                    int id = rset.getInt("id");
+                    String nom = rset.getString("nom");
+                    String prenom = rset.getString("prenom");
+                    double salaire = rset.getDouble("salaire");
+                    String email = rset.getString("email");
+                    String phone = rset.getString("phone");
+                    String role = rset.getString("role");
+                    String poste = rset.getString("poste");
+                    int holidayBalance = rset.getInt("holidayBalance");
+                    employees.add(new Employee(id, nom, prenom, salaire, email, phone, Role.valueOf(role), Poste.valueOf(poste), holidayBalance));
+                }
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+        if (employees.isEmpty()) {
+            EmployeeView.AfficherFail("Aucun employé a été trouvé.");
+        }
+        return employees;
+    }
+    @Override
+    public boolean ajouter(Employee employee) {
+        String SQL = "INSERT INTO employee (nom, prenom, salaire, email, phone, role, poste, holidayBalance) VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+        try (PreparedStatement stmt = connection.prepareStatement(SQL)) {
             stmt.setString(1, employee.getNom());
             stmt.setString(2, employee.getPrenom());
-            stmt.setString(3, employee.getEmail());
-            stmt.setString(4, employee.getPhone());
-            stmt.setDouble(5, employee.getSalaire());
+            stmt.setDouble(3, employee.getSalaire());
+            stmt.setString(4, employee.getEmail());
+            stmt.setString(5, employee.getPhone());            
             stmt.setString(6, employee.getRole().name());
             stmt.setString(7, employee.getPoste().name());
+            stmt.setInt(8, employee.getHolidayBalance());
             stmt.executeUpdate();
+            HolidayController.setEmployeesInComboBox();
+            EmployeeController.viderLesChamps();
+            EmployeeView.AjouterSuccess(employee);
         } catch (SQLException e) {
             e.printStackTrace();
+            return false;
         }
+        return true;
     }
-
     @Override
-    public void delete(int id) {
-        String sql = "DELETE FROM Employe WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            stmt.executeUpdate();
-        } catch (SQLException e) {
+    public Employee findById(int EmployeeId) {
+        String SQL = "SELECT * FROM employee WHERE id = ?";
+        Employee employee = null;
+        EmployeeController.viderLesChamps();
+        try (PreparedStatement stmt = connection.prepareStatement(SQL)) {
+            stmt.setInt(1, EmployeeId);
+            try (ResultSet rset = stmt.executeQuery()) {                
+                if(rset.next()) {
+                    employee = new Employee(rset.getInt("id"), rset.getString("nom"), rset.getString("prenom"), rset.getDouble("salaire"), rset.getString("email"), rset.getString("phone"), Role.valueOf(rset.getString("role")), Poste.valueOf(rset.getString("poste")), rset.getInt("holidayBalance"));
+                }
+            }catch(SQLException e) {
+                e.printStackTrace();
+            }
+        }catch(SQLException e) {
             e.printStackTrace();
         }
+        return employee;
     }
-
     @Override
-public List<Employee> listAll() {
-    List<Employee> employees = new ArrayList<>();
-    String sql = "SELECT * FROM Employe";
-    try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql);
-         ResultSet rs = stmt.executeQuery()) {
-
-        while (rs.next()) {
-            String roleStr = rs.getString("role").toUpperCase();
-            String posteStr = rs.getString("poste").toUpperCase();
-
-            Role role = null;
-            Poste poste = null;
-            try {
-                role = Role.valueOf(roleStr);
-            } catch (IllegalArgumentException e) {
-                System.out.println("Role non valide : " + roleStr);
-                role = Role.EMPLOYE;
-            }
-
-            try {
-                poste = Poste.valueOf(posteStr);
-            } catch (IllegalArgumentException e) {
-                System.out.println("Poste non valide : " + posteStr);
-                poste = Poste.INGENIEURE_ETUDE_ET_DEVELOPPEMENT; // Valeur par défaut
-            }
-
-            Employee employee = new Employee(
-                    rs.getString("nom"),
-                    rs.getString("prenom"),
-                    rs.getString("email"),
-                    rs.getString("phone"),
-                    rs.getDouble("salaire"),
-                    role,
-                    poste
-            );
-            employee.setId(rs.getInt("id"));
-            employees.add(employee);
-        }
-    } catch (SQLException e) {
-        e.printStackTrace();
-    }
-    return employees;
-}
-
-    
-
-
-
-    @Override
-    public Employee findById(int id) {
-        String sql = "SELECT * FROM Employe WHERE id = ?";
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
-            stmt.setInt(1, id);
-            ResultSet rs = stmt.executeQuery();
-            if (rs.next()) {
-                return new Employee(
-                        rs.getString("nom"),
-                        rs.getString("prenom"),
-                        rs.getString("email"),
-                        rs.getString("phone"),
-                        rs.getDouble("salaire"),
-                        Role.valueOf(rs.getString("role")),
-                        Poste.valueOf(rs.getString("poste"))
-                );
-            }
-        } catch (SQLException e) {
-            e.printStackTrace();
-        }
-        return null;
-    }
-
-    @Override
-    public void update(Employee employee, int id) {
-        String sql = "UPDATE Employe SET nom = ?, prenom = ?, email = ?, phone = ?, salaire = ?, role = ?, poste = ? WHERE id = ?";
-            
-        try (Connection conn = DBConnection.getConnection(); PreparedStatement stmt = conn.prepareStatement(sql)) {
+    public void modifier(Employee employee, int EmployeeId) {
+        String SQL = "UPDATE employee SET nom = ?, prenom = ?, salaire = ?, email = ?, phone = ?, role = ?, poste = ? WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(SQL)) {
             stmt.setString(1, employee.getNom());
             stmt.setString(2, employee.getPrenom());
-            stmt.setString(3, employee.getEmail());
-            stmt.setString(4, employee.getPhone());
-            stmt.setDouble(5, employee.getSalaire());
-            stmt.setString(6, employee.getRole().name()); // Envoi du rôle en tant que chaîne (avec la méthode .name())
-            stmt.setString(7, employee.getPoste().name()); // Idem pour le poste
-            stmt.setInt(8, id); // L'ID de l'employé à mettre à jour
-            int rowsUpdated = stmt.executeUpdate();
-            
-            if (rowsUpdated > 0) {
-                System.out.println("L'employé a été mis à jour avec succès.");
+            stmt.setDouble(3, employee.getSalaire());
+            stmt.setString(4, employee.getEmail());
+            stmt.setString(5, employee.getPhone());
+            stmt.setString(6, employee.getRole().name());
+            stmt.setString(7, employee.getPoste().name());
+            stmt.setInt(8, EmployeeId);
+
+            int rowsAffected = stmt.executeUpdate();
+            if (rowsAffected > 0) {
+                HolidayController.setEmployeesInComboBox();
+                EmployeeController.viderLesChamps();
+                EmployeeView.ModifierSuccess();
             } else {
-                System.out.println("Aucun employé trouvé avec cet ID.");
+                EmployeeView.ModifierFail("Aucune modification effectuée. L'ID est peut-être incorrect.");
             }
-            
+        } catch (SQLException e) {
+            e.printStackTrace();
+            EmployeeView.ModifierFail("Erreur lors de la mise à jour.");
+        }
+    }
+
+
+
+    @Override
+    public void supprimer(int EmployeeId) {
+        String SQL = "DELETE FROM employee WHERE id = ?";
+        try (PreparedStatement stmt = connection.prepareStatement(SQL)) {
+            EmployeeController.viderLesChamps();
+            stmt.setInt(1, EmployeeId);
+            stmt.executeUpdate();
+            HolidayController.setEmployeesInComboBox();
+            EmployeeView.SupprimerSuccess();
         } catch (SQLException e) {
             e.printStackTrace();
         }
     }
-    
 }

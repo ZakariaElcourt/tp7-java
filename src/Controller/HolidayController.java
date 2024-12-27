@@ -1,224 +1,182 @@
 package Controller;
 
-import DAO.HolidayDAOImpl;
+import java.util.List;
+import javax.swing.DefaultComboBoxModel;
+import javax.swing.JComboBox;
+import javax.swing.table.DefaultTableModel;
 import Model.Employee;
 import Model.Holiday;
-import Model.Type;
+import Model.HolidayModel;
+import Model.HolidayType;
+import Model.Role;
 import View.HolidayView;
 
-import javax.swing.*;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-
 public class HolidayController {
-    private final HolidayView view;
-    private final HolidayDAOImpl dao;
+    private static HolidayModel holidayModel;
+    private static HolidayView holidayView;
+    private boolean isDeselecting = false;
+    private Employee employeeLogged;
 
-    public HolidayController(HolidayView view) {
-        this.view = view;
-        this.dao = new HolidayDAOImpl();
-
-        loadEmployeeNames();
-        refreshHolidayTable();
-
-        view.addButton.addActionListener(e -> addHoliday());
-        view.deleteButton.addActionListener(e -> deleteHoliday());
-        view.modifyButton.addActionListener(e -> modifyHoliday());
-
-        // Listener pour la sélection d'une ligne dans le tableau
-        view.holidayTable.getSelectionModel().addListSelectionListener(e -> {
-            if (!e.getValueIsAdjusting()) {
-                populateFieldsForSelectedHoliday();
-            }
+    public HolidayController(HolidayModel model, HolidayView view, Employee employee) {
+        this.employeeLogged = employee;
+        this.holidayModel = model;
+        this.holidayView = view;
+        setEmployeesInComboBox();
+        holidayView.getAjouterButton().addActionListener(e -> this.ajouterHoliday());
+        holidayView.getAfficherButton().addActionListener(e -> {
+            this.deselectHoliday();
+            this.afficherHoliday();
         });
-    }
-
-    private void loadEmployeeNames() {
-        view.employeeNameComboBox.removeAllItems();
-        List<String> names = dao.getAllEmployeeNames();
-        names.forEach(view.employeeNameComboBox::addItem);
-    }
-
-    private void refreshHolidayTable() {
-        List<Holiday> holidays = dao.listAll();
-        String[] columnNames = {"ID", "Employé", "Date Début", "Date Fin", "Type"};
-        Object[][] data = new Object[holidays.size()][5];
-
-        for (int i = 0; i < holidays.size(); i++) {
-            Holiday h = holidays.get(i);
-            data[i] = new Object[]{h.getId(), h.getEmployeeName(), h.getStartDate(), h.getEndDate(), h.getType()};
+        holidayView.getModifierButton().addActionListener(e -> this.ModifierHoliday());
+        holidayView.getSupprimerButton().addActionListener(e -> this.supprimerHoliday());
+        holidayView.getTable().getSelectionModel().addListSelectionListener(e -> this.setHolidayInformations());
+        holidayView.getDeselectButton().addActionListener(e -> this.deselectHoliday());
+        if (employeeLogged != null && (employeeLogged.getRole().equals(Role.ADMIN) || employeeLogged.getRole().equals(Role.MANAGER))) {
+            this.afficherHoliday();
         }
-
-        view.holidayTable.setModel(new javax.swing.table.DefaultTableModel(data, columnNames));
-        view.employeeNameComboBox.setEnabled(true);
+        if (employeeLogged != null && employeeLogged.getRole().equals(Role.EMPLOYEE)) {
+            this.afficherHolidayLogged();
+        }
     }
 
-    private void populateFieldsForSelectedHoliday() {
-        int selectedRow = view.holidayTable.getSelectedRow();
-        if (selectedRow != -1) {
-            view.employeeNameComboBox.setEnabled(false);
-    
-            int id = (int) view.holidayTable.getValueAt(selectedRow, 0);
-            String employeeName = (String) view.holidayTable.getValueAt(selectedRow, 1);
-            String startDate = (String) view.holidayTable.getValueAt(selectedRow, 2);
-            String endDate = (String) view.holidayTable.getValueAt(selectedRow, 3);
-            Type type = Type.valueOf(view.holidayTable.getValueAt(selectedRow, 4).toString());
-    
-            view.employeeNameComboBox.setSelectedItem(employeeName);
-            view.startDateField.setText(startDate);
-            view.endDateField.setText(endDate);
-            view.typeCombo.setSelectedItem(type.toString());
-            view.modifyButton.setActionCommand(String.valueOf(id));
+    public void ajouterHoliday() {
+        JComboBox<String> nom = holidayView.getNomEmployeComboBox();
+        int Employeeid = Integer.parseInt(nom.getSelectedItem().toString().split(" - ")[0]);
+        HolidayType type = (HolidayType) holidayView.getTypeComboBox().getSelectedItem();
+        String dateDebut = holidayView.getDateDebut();
+        String dateFin = holidayView.getDateFin();
+        Holiday holiday = new Holiday(1, Employeeid, type, dateDebut, dateFin);
+
+        Employee employee = holidayModel.FindById(Employeeid);
+        if (employee != null) {
+            holidayModel.ajouterHoliday(holiday, employee);  // Appel à ajouterHoliday
+            this.viderLesChamps();
+            this.afficherHoliday();
         } else {
-            clearFields(); // Vider les champs si aucune ligne n'est sélectionnée
-        }
-    }
-    
-
-    private boolean isValidDate(String date) {
-        try {
-            LocalDate.parse(date, DateTimeFormatter.ISO_LOCAL_DATE);
-            return true;
-        } catch (Exception e) {
-            return false;
+            HolidayView.fail("Employé introuvable.");
         }
     }
 
-    private boolean isEndDateAfterStartDate(String startDate, String endDate) {
-        LocalDate start = LocalDate.parse(startDate, DateTimeFormatter.ISO_LOCAL_DATE);
-        LocalDate end = LocalDate.parse(endDate, DateTimeFormatter.ISO_LOCAL_DATE);
-        return end.isAfter(start);
-    }
-
-    private void addHoliday() {
-        try {
-            String employeeName = (String) view.employeeNameComboBox.getSelectedItem();
-            String startDate = view.startDateField.getText();
-            String endDate = view.endDateField.getText();
-            Type type = Type.valueOf(view.typeCombo.getSelectedItem().toString().toUpperCase());
-
-            int employeeId = dao.getEmployeeIdByName(employeeName);
-            if (dao.isHolidayOverlapping(employeeId, startDate, endDate)) {
-                throw new IllegalArgumentException("Un congé existe déjà sur cette période.");
+    public void afficherHoliday() {
+        List<Holiday> holidays = holidayModel.afficher();
+        if (holidays != null && !holidays.isEmpty()) {
+            DefaultTableModel model = (DefaultTableModel) holidayView.getHolidayTable().getModel();
+            model.setRowCount(0); // Réinitialiser les lignes
+            for (Holiday holiday : holidays) {
+                Employee employee = holidayModel.FindById(holiday.getIdEmployee());
+                String employeeName = (employee != null) ? employee.getNom() + " " + employee.getPrenom() : "Employé inconnu";
+                model.addRow(new Object[]{holiday.getId(), employeeName, holiday.getType(), holiday.getStart(), holiday.getEnd()});
             }
-
-            Holiday holiday = new Holiday(employeeName, startDate, endDate, type);
-            dao.add(holiday);
-            refreshHolidayTable();
-            clearFields();
-            JOptionPane.showMessageDialog(view, "Congé ajouté avec succès.");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(view, "Erreur : " + ex.getMessage());
         }
     }
 
-    private void modifyHoliday() {
-        try {
-            String actionCommand = view.modifyButton.getActionCommand();
-            if (actionCommand != null && !actionCommand.isEmpty()) {
-                int id = Integer.parseInt(actionCommand);
-        
-                String startDate = view.startDateField.getText();
-                String endDate = view.endDateField.getText();
-                Type type = Type.valueOf(view.typeCombo.getSelectedItem().toString().toUpperCase());
-        
-                if (!isValidDate(startDate) || !isValidDate(endDate)) {
-                    throw new IllegalArgumentException("Les dates doivent être au format YYYY-MM-DD.");
-                }
-                if (!isEndDateAfterStartDate(startDate, endDate)) {
-                    throw new IllegalArgumentException("La date de fin doit être après la date de début.");
-                }
-        
-                // Get employee name from the combo box
-                String employeeName = (String) view.employeeNameComboBox.getSelectedItem();
-        
-                // Create a new Holiday object with the selected details
-                Holiday holiday = new Holiday(employeeName, startDate, endDate, type);
-                // Call the update method
-                dao.update(holiday, id);
-        
-                // Refresh the table after the update
-                refreshHolidayTable();
-                clearFields();
-                JOptionPane.showMessageDialog(view, "Congé modifié avec succès.");
+    public void ModifierHoliday() {
+        int selectedRow = holidayView.getTable().getSelectedRow();
+        if (selectedRow == -1) {
+            HolidayView.fail("Veuillez sélectionner une ligne.");
+            return;
+        }
+
+        int idHoliday = Integer.parseInt(holidayView.getTable().getModel().getValueAt(selectedRow, 0).toString());
+        Holiday oldHoliday = holidayModel.FindHolidayById(idHoliday);
+        if (oldHoliday != null) {
+            Holiday updatedHoliday = new Holiday();
+            updatedHoliday.setId(idHoliday);
+            updatedHoliday.setIdEmployee(Integer.parseInt(holidayView.getNomEmployeComboBox().getSelectedItem().toString().split(" - ")[0]));
+            updatedHoliday.setType((HolidayType) holidayView.getTypeComboBox().getSelectedItem());
+            updatedHoliday.setStart(holidayView.getDateDebut());
+            updatedHoliday.setEnd(holidayView.getDateFin());
+
+            holidayModel.ModifierHoliday(updatedHoliday, oldHoliday);
+            this.afficherHoliday();
+            this.deselectHoliday();
+        } else {
+            HolidayView.fail("Holiday introuvable.");
+        }
+    }
+
+    public void supprimerHoliday() {
+        int selectedRow = holidayView.getTable().getSelectedRow();
+        if (selectedRow == -1) {
+            HolidayView.fail("Veuillez Sélectionner une ligne.");
+            return;
+        } else {
+            int idHoliday = Integer.parseInt(holidayView.getTable().getModel().getValueAt(selectedRow, 0).toString());
+            Holiday oldHoliday = holidayModel.FindHolidayById(idHoliday);
+            if (oldHoliday != null) {
+                holidayModel.supprimerHoliday(oldHoliday);
+                this.afficherHoliday();
+                this.deselectHoliday();
             } else {
-                JOptionPane.showMessageDialog(view, "Veuillez sélectionner un congé.");
+                HolidayView.fail("Holiday introuvable.");
             }
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(view, "Erreur : " + ex.getMessage());
         }
     }
-    
-    
-    private void clearFields() {
-        // Réactiver le combo box des employés
-        view.employeeNameComboBox.setEnabled(true);
-        // Réinitialiser la sélection du combo box des employés au premier élément
-        if (view.employeeNameComboBox.getItemCount() > 0) {
-            view.employeeNameComboBox.setSelectedIndex(0);
-        }
-    
-        // Vider les champs de date
-        view.startDateField.setText("");
-        view.endDateField.setText("");
-    
-        // Réinitialiser la sélection du type de congé au premier élément
-        if (view.typeCombo.getItemCount() > 0) {
-            view.typeCombo.setSelectedIndex(0);
-        }
-    
-        // Effacer l'ID sauvegardé dans le bouton de modification (ActionCommand)
-        view.modifyButton.setActionCommand("");
-    }
-    
 
-    private void deleteHoliday() {
-        try {
-            int selectedRow = view.holidayTable.getSelectedRow();
-            if (selectedRow == -1) {
-                JOptionPane.showMessageDialog(view, "Veuillez sélectionner un congé.");
-                return;
+    public static void setEmployeesInComboBox() {
+        List<Employee> employees = holidayModel.afficherEmployee();
+        DefaultComboBoxModel<String> comboBoxModel = new DefaultComboBoxModel<>();
+        for (Employee e : employees) {
+            comboBoxModel.addElement(e.getId() + " - " + e.getNom() + " " + e.getPrenom());
+        }
+        holidayView.getNomEmployeComboBox().setModel(comboBoxModel);
+    }
+
+    public void setHolidayInformations() {
+        if (isDeselecting) return;
+
+        int selectedRow = holidayView.getTable().getSelectedRow();
+        if (selectedRow == -1) {
+            return;
+        }
+
+        int id = Integer.parseInt(holidayView.getTable().getModel().getValueAt(selectedRow, 0).toString());
+        Holiday holiday = holidayModel.FindHolidayById(id);
+        if (holiday != null) {
+            Employee employee = holidayModel.FindById(holiday.getIdEmployee());
+            if (employee != null) {
+                holidayView.getNomEmployeComboBox().setSelectedItem(employee.getId() + " - " + employee.getNom() + " " + employee.getPrenom());
+                holidayView.getNomEmployeComboBox().setEnabled(false);
+                holidayView.getDeselectButton().setVisible(true);
+                holidayView.getTypeComboBox().setSelectedItem(holiday.getType());
+                holidayView.setDateDebut(holiday.getStart());
+                holidayView.setDateFin(holiday.getEnd());
+            } else {
+                HolidayView.fail("Employé introuvable.");
             }
-    
-            int id = (int) view.holidayTable.getValueAt(selectedRow, 0);
-            Holiday holiday = dao.findById(id);
-            String employeeName = holiday.getEmployeeName();
-            String startDate = holiday.getStartDate();
-            String endDate = holiday.getEndDate();
-    
-            // Afficher une boîte de dialogue de confirmation
-            int confirm = JOptionPane.showConfirmDialog(
-                    view,
-                    "Êtes-vous sûr de vouloir supprimer le congé de " + employeeName +
-                            " du " + startDate + " au " + endDate + " ?",
-                    "Confirmation de suppression",
-                    JOptionPane.YES_NO_OPTION
-            );
-    
-            // Si l'utilisateur annule, arrêter la suppression
-            if (confirm != JOptionPane.YES_OPTION) {
-                return;
-            }
-    
-            // Vérifier si la date de début est dans le futur
-            LocalDate start = LocalDate.parse(startDate);
-            if (start.isAfter(LocalDate.now())) {
-                int employeeId = dao.getEmployeeIdByName(employeeName);
-                Employee employee = dao.getEmployeeById(employeeId);
-                long days = java.time.temporal.ChronoUnit.DAYS.between(start, LocalDate.parse(holiday.getEndDate()));
-                employee.addSolde((int) days);
-                dao.updateEmployeeSolde(employee);
-            }
-    
-            // Supprimer le congé
-            dao.delete(id);
-            refreshHolidayTable();
-            clearFields(); // Réinitialiser les champs après suppression
-            JOptionPane.showMessageDialog(view, "Congé supprimé avec succès.");
-        } catch (Exception ex) {
-            JOptionPane.showMessageDialog(view, "Erreur : " + ex.getMessage());
+        } else {
+            HolidayView.fail("Holiday introuvable.");
         }
     }
-    
+
+    public void deselectHoliday() {
+        isDeselecting = true;
+        holidayView.getNomEmployeComboBox().setEnabled(true);
+        holidayView.getDeselectButton().setVisible(false);
+        this.viderLesChamps();
+        holidayView.getTable().clearSelection();
+        isDeselecting = false;
+    }
+
+    public void viderLesChamps() {
+        holidayView.setDateDebut("YYYY-MM-DD");
+        holidayView.setDateFin("YYYY-MM-DD");
+    }
+
+    public void afficherHolidayLogged() {
+        if (employeeLogged != null) {
+            List<Holiday> holidays = HolidayModel.afficherHolidaysLogged(employeeLogged.getId());
+            DefaultTableModel model = (DefaultTableModel) holidayView.getHolidayTable().getModel();
+            model.setRowCount(0);
+            if (holidays != null && !holidays.isEmpty()) {
+                for (Holiday holiday : holidays) {
+                    model.addRow(new Object[]{holiday.getId(), employeeLogged.getNom() + " " + employeeLogged.getPrenom(), holiday.getType(), holiday.getStart(), holiday.getEnd()});
+                }
+            } else {
+                holidayView.getTable().setModel(new DefaultTableModel(new Object[]{"Aucun holiday à afficher"}, 0));
+            }
+        } else {
+            HolidayView.fail("Utilisateur non connecté.");
+        }
+    }
 }

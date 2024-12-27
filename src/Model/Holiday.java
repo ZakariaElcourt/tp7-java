@@ -2,60 +2,58 @@ package Model;
 
 public class Holiday {
     private int id;
-    private int employeeId;
-    private String employeeName;
-    private String startDate;
-    private String endDate;
-    private Type type;
-
-    // Constructeur avec employeeName pour listAll()
-    public Holiday(int id, String employeeName, String startDate, String endDate, Type type) {
+    private int idEmployee;
+    private HolidayType type;
+    private String start;
+    private String end;
+    public Holiday(int id,int idEmployee, HolidayType type, String start, String end) {
         this.id = id;
-        this.employeeName = employeeName;
-        this.startDate = startDate;
-        this.endDate = endDate;
+        this.idEmployee = idEmployee;
         this.type = type;
+        this.start = start;
+        this.end = end;
     }
-
-    public Holiday(String employeeName, String startDate, String endDate, Type type) {
-        this.employeeName = employeeName;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.type = type;
+    public Holiday() {
+        this.id = 0;
+        this.idEmployee = 0;
+        this.type = null;
+        this.start = null;
+        this.end = null;
     }
-
-    public Holiday(int employeeId, String startDate, String endDate, Type type) {
-        this.employeeId = employeeId;
-        this.startDate = startDate;
-        this.endDate = endDate;
-        this.type = type;
-    }
-
     public int getId() {
         return id;
     }
 
-    public int getEmployeeId() {
-        return employeeId;
+    public void setId(int id) {
+        this.id = id;
     }
-
-    public String getEmployeeName() {
-        return employeeName;
+    public int getIdEmployee() {
+        return idEmployee;
     }
-
-    public String getStartDate() {
-        return startDate;
+    public void setIdEmployee(int idEmployee) {
+        this.idEmployee = idEmployee;
     }
-
-    public String getEndDate() {
-        return endDate;
-    }
-
-    public Type getType() {
+    public HolidayType getType() {
         return type;
     }
 
-    public void setEmployeeName(String employeeName) {
-        this.employeeName = employeeName;
+    public void setType(HolidayType type) {
+        this.type = type;
+    }
+
+    public String getStart() {
+        return start;
+    }
+
+    public void setStart(String start) {
+        this.start = start;
+    }
+
+    public String getEnd() {
+        return end;
+    }
+
+    public void setEnd(String end) {
+        this.end = end;
     }
 }

@@ -39,19 +39,19 @@ public class EmployeeModel {
             e.printStackTrace();
         }
     }
-    private boolean checkFileExists(File file) {
+    public boolean checkFileExists(File file) {
     if (!file.exists()) {
         throw new IllegalArgumentException("Le fichier n'existe pas : " + file.getPath());
     }
     return true;
 }
-private boolean checkIsFile(File file) {
+public boolean checkIsFile(File file) {
     if (!file.isFile()) {
         throw new IllegalArgumentException("Le chemin spécifié n'est pas un fichier : " + file.getPath());
     }
     return true;
 }
-private boolean checkIsReadable(File file) {
+public boolean checkIsReadable(File file) {
     if (!file.canRead()) {
         throw new IllegalArgumentException("Le fichier n'est pas lisible : " + file.getPath());
     }

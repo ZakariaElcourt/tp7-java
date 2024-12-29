@@ -1,10 +1,14 @@
 package Controller;
-
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.swing.JFileChooser;
+import javax.swing.filechooser.FileNameExtensionFilter;
 import javax.swing.table.DefaultTableModel;
 
 import Utilities.Utils;
+import java.io.IOException;
 
 import Model.Employee;
 import Model.EmployeeModel;
@@ -38,6 +42,8 @@ public class EmployeeController {
         EmployeeController.employeeView.getCreerCompteButton().addActionListener(e -> new CreerController());
         EmployeeController.employeeView.getTable().getSelectionModel().addListSelectionListener(e -> this.setEmployeeInformations());
         EmployeeController.employeeView.getDeselectButton().addActionListener(e -> EmployeeController.deselectEmployee());
+        employeeView.getImporterButton().addActionListener(e -> importerFichier());
+        employeeView.getExporterButton().addActionListener(e -> exporterFichier());
         if(employeelogged.getRole().equals(Role.ADMIN) || employeelogged.getRole().equals(Role.MANAGER)){
             this.afficherEmployee();
         }
@@ -177,5 +183,60 @@ public class EmployeeController {
         DefaultTableModel tableModel = (DefaultTableModel) employeeView.getTable().getModel();
         tableModel.setRowCount(0);
         tableModel.addRow(new Object[]{employeeloggeddb.getId(), employeeloggeddb.getNom(), employeeloggeddb.getPrenom(), employeeloggeddb.getEmail(), employeeloggeddb.getSalaire(), employeeloggeddb.getPhone(), employeeloggeddb.getRole(), employeeloggeddb.getPoste(),employeeloggeddb.getHolidayBalance()});
+    }
+    public void exportData() {
+        try {
+            List<Employee> employees = employeeModel.afficherEmployee();
+            employeeModel.exportData("exported_employees.txt", employees);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private void importData() {
+        try {
+            employeeModel.importData("employees.txt");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+    private void handleExport() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Fichiers CSV", "csv"));
+
+        if (fileChooser.showSaveDialog(employeeView) == JFileChooser.APPROVE_OPTION) {
+            try {
+                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                if (!filePath.toLowerCase().endsWith(".txt")) {
+                    filePath += ".txt";
+                }
+
+                List<Employee> employees = employeeModel.findAll();
+                employeeModel.exportData(filePath, employees);
+                employeeView.showSuccessMessage("Exportation réussie !");
+            } catch (Exception ex) {
+                employeeView.showErrorMessage("Erreur lors de l'exportation : " + ex.getMessage());
+            }
+        }
+    }
+    private void handleImport() {
+        JFileChooser fileChooser = new JFileChooser();
+        fileChooser.setFileFilter(new FileNameExtensionFilter("Fichiers CSV", "txt"));
+
+        if (fileChooser.showOpenDialog(employeeView) == JFileChooser.APPROVE_OPTION) {
+            try {
+                String filePath = fileChooser.getSelectedFile().getAbsolutePath();
+                employeeModel.importData(filePath);
+                employeeView.showSuccessMessage("Importation réussie !");
+            } catch (Exception ex) {
+                employeeView.showErrorMessage("Erreur lors de l'importation : " + ex.getMessage());
+            }
+        }
+    }
+    public void importerFichier() {
+        handleImport(); // Appelle la logique d'importation existante
+    }
+
+    public void exporterFichier() {
+        handleExport(); // Appelle la logique d'exportation existante
     }
 }

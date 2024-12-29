@@ -7,6 +7,7 @@ import Model.Employee;
 import Model.Poste;
 import Model.Role;
 import java.awt.*;
+
 public class EmployeeView extends JFrame {
     protected static final EmployeeView INSTANCE = new EmployeeView();
     protected JPanel General = new JPanel();
@@ -14,11 +15,12 @@ public class EmployeeView extends JFrame {
     protected JPanel GeneralDown = new JPanel();
     protected JPanel ListContainer = new JPanel();
     protected JPanel ButtonsContainer = new JPanel();
-    protected DefaultTableModel tableModel = new DefaultTableModel(new String[]{"Id","Nom", "Prenom", "Email", "Salaire", "Phone", "Role", "Poste", "Holiday Balance"}, 0){
+    protected DefaultTableModel tableModel = new DefaultTableModel(
+            new String[]{"Id", "Nom", "Prenom", "Email", "Salaire", "Phone", "Role", "Poste", "Holiday Balance"}, 0) {
         @Override
-            public boolean isCellEditable(int row, int column) {
-                return false;
-            }
+        public boolean isCellEditable(int row, int column) {
+            return false;
+        }
     };
     protected JTable Tableau = new JTable(tableModel);
     protected JButton Ajouter = new JButton("Ajouter");
@@ -27,6 +29,11 @@ public class EmployeeView extends JFrame {
     protected JButton Afficher = new JButton("Afficher");
     protected JButton CreerCompte = new JButton("Créer un compte");
     private JButton deselectButton = new JButton("Désélectionner");
+
+    // Nouveaux boutons Importer et Exporter
+    protected JButton Importer = new JButton("Importer");
+    protected JButton Exporter = new JButton("Exporter");
+
     protected JLabel NomLabel;
     protected JTextField Nom;
     protected JLabel PrenomLabel;
@@ -51,7 +58,7 @@ public class EmployeeView extends JFrame {
         General.setLayout(new BorderLayout());
         General.add(GeneralUp, BorderLayout.NORTH);
         General.add(GeneralDown, BorderLayout.CENTER);
-        GeneralUp.setLayout(new GridLayout(7,2));
+        GeneralUp.setLayout(new GridLayout(7, 2));
         GeneralUp.setBorder(BorderFactory.createEmptyBorder(10, 18, 10, 18));
         NomLabel = new JLabel("Nom");
         Nom = new JTextField();
@@ -84,7 +91,7 @@ public class EmployeeView extends JFrame {
         GeneralDown.setLayout(new BorderLayout());
         GeneralDown.add(ListContainer, BorderLayout.CENTER);
         ListContainer.setLayout(new FlowLayout());
-        Dimension preferredSize = new Dimension(EmployeeView.this.getWidth() - 50,500);
+        Dimension preferredSize = new Dimension(EmployeeView.this.getWidth() - 50, 500);
         Tableau.setPreferredScrollableViewportSize(preferredSize);
         Tableau.setFillsViewportHeight(true);
         ListContainer.add(new JScrollPane(Tableau));
@@ -95,43 +102,67 @@ public class EmployeeView extends JFrame {
         ButtonsContainer.add(Supprimer);
         ButtonsContainer.add(Afficher);
         ButtonsContainer.add(CreerCompte);
+
+        // Ajout des nouveaux boutons Importer et Exporter
+        ButtonsContainer.add(Importer);
+        ButtonsContainer.add(Exporter);
+
         ButtonsContainer.add(deselectButton);
         deselectButton.setVisible(false);
         setVisible(true);
     }
-    public static void AjouterSuccess(Employee employee){
+
+    public static void AjouterSuccess(Employee employee) {
         JOptionPane.showMessageDialog(null, "L'employé " + employee.getNom() + " " + employee.getPrenom() + " a été ajouté avec succès");
     }
-    public static void AjouterFail(String message){
+
+    public static void AjouterFail(String message) {
         JOptionPane.showMessageDialog(null, message);
     }
-    public static void AfficherFail(String message){
+
+    public static void AfficherFail(String message) {
         JOptionPane.showMessageDialog(null, message);
     }
-    public static void SupprimerSuccess(){
+
+    public static void SupprimerSuccess() {
         JOptionPane.showMessageDialog(null, "L'employé a bien éte supprimé.");
     }
-    public static void SupprimerFail(String message){
+
+    public static void SupprimerFail(String message) {
         JOptionPane.showMessageDialog(null, message);
     }
-    public static void ModifierSuccess(){
+
+    public static void ModifierSuccess() {
         JOptionPane.showMessageDialog(null, "L'employé a bien été modifié.");
     }
-    public static void ModifierFail(String message){
+
+    public static void ModifierFail(String message) {
         JOptionPane.showMessageDialog(null, message);
     }
-    protected void CacherColumn(int index){
+
+    protected void CacherColumn(int index) {
         Tableau.getColumnModel().getColumn(index).setMinWidth(0);
         Tableau.getColumnModel().getColumn(index).setMaxWidth(0);
         Tableau.getColumnModel().getColumn(index).setWidth(0);
     }
-    public static boolean SupprimerConfirmation(){
-        int choice = JOptionPane.showOptionDialog(null, "Êtes-vous sûr de supprimer cet employé?", "Confirmation", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, new String[]{"Oui", "Non"}, "Non");
+    public void showSuccessMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Succès", JOptionPane.INFORMATION_MESSAGE);
+    }
+
+    public void showErrorMessage(String message) {
+        JOptionPane.showMessageDialog(this, message, "Erreur", JOptionPane.ERROR_MESSAGE);
+    }
+
+    public static boolean SupprimerConfirmation() {
+        int choice = JOptionPane.showOptionDialog(null, "Êtes-vous sûr de supprimer cet employé?", "Confirmation",
+                JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE, null, new String[]{"Oui", "Non"}, "Non");
         return choice == JOptionPane.YES_OPTION;
     }
+
     public JTable getTable() {
         return Tableau;
     }
+
     public JButton getAjouterButton() {
         return Ajouter;
     }
@@ -151,6 +182,15 @@ public class EmployeeView extends JFrame {
     public JButton getCreerCompteButton() {
         return CreerCompte;
     }
+
+    public JButton getImporterButton() {
+        return Importer;
+    }
+
+    public JButton getExporterButton() {
+        return Exporter;
+    }
+
     public JTextField getNomField() {
         return Nom;
     }
@@ -206,9 +246,11 @@ public class EmployeeView extends JFrame {
     public void setPosteComboBox(JComboBox<Poste> posteComboBox) {
         PosteComboBox = posteComboBox;
     }
+
     public static EmployeeView getInstance() {
         return INSTANCE;
     }
+
     public JButton getDeselectButton() {
         return deselectButton;
     }

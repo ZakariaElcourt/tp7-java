@@ -22,7 +22,8 @@ public class Employee {
         this.poste = poste;
         this.holidayBalance = holidayBalance;
     }
-
+    public Employee(){};
+    public void setId(int id){this.id=id;}
     public int getId() { return id; }
     public String getNom() { return nom; }
     public String getPrenom() { return prenom; }
